@@ -1,0 +1,57 @@
+#!/bin/bash
+
+TAP=tap0
+
+# host only
+IP=192.168.1.2
+
+# bridge
+BRG=br0
+ETH=enp0s8
+
+MODE=${1}
+[ -z "${MODE}" ] && {
+    MODE=hostonly
+}
+
+ACTION=${2}
+[ -z "${ACTION}" ] && {
+    ACTION=up
+}
+
+if [ ${MODE} = "hostonly" ]; then
+    if [ ${ACTION} = "down" ]; then
+	/usr/sbin/ifconfig ${TAP} down
+	/usr/sbin/tunctl -d ${TAP}
+    else
+	/usr/sbin/tunctl -u `id -un` -t ${TAP}
+	/usr/sbin/ifconfig ${TAP} ${IP} up
+    fi
+    exit 0
+fi
+
+if [ ${MODE} = "bridge" ]; then
+    if [ ${ACTION} = "down" ]; then
+	/sbin/ifconfig ${TAP} down
+	/sbin/ifconfig ${ETH} down
+	/sbin/ifconfig ${BRG} down
+	/usr/sbin/brctl delif ${BRG} ${ETH}
+	/usr/sbin/brctl delif ${BRG} ${TAP}
+	/usr/sbin/tunctl -d ${TAP}
+	/usr/sbin/brctl delbr ${BRG}
+    else
+	/sbin/ifconfig ${ETH} down
+	/sbin/ifconfig ${ETH} promisc 0.0.0.0 up
+	/usr/sbin/tunctl -u `id -un` -t ${TAP}
+	/sbin/ifconfig ${TAP} promisc 0.0.0.0 up
+	/usr/sbin/brctl addbr ${BRG}
+	/usr/sbin/brctl addif ${BRG} ${ETH}
+	/usr/sbin/brctl addif ${BRG} ${TAP}
+	/usr/sbin/brctl stp ${BRG} off
+	/sbin/ifconfig ${BRG} promisc 0.0.0.0 up
+    fi
+    exit 0
+fi
+
+echo $"Usage: hostconf [hostonly|bridge] [up|down]" >&2
+exit 2

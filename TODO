@@ -1,0 +1,16 @@
+* TCP
+- Keep alive
+- Urgent pointer
+- Delayed acknowledgement (fast timer)
+- Negal's algorithms
+
+* UDP
+- multicast
+
+* DHCP
+- Lease renewal/release
+
+* General
+- Improve efficiency in packet management (minimize copying)
+
+* IPv6?
